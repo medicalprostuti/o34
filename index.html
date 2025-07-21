@@ -1,0 +1,1231 @@
+<!DOCTYPE html>
+<html lang="bn">
+  <head>
+    <script>
+      document.addEventListener("contextmenu", (event) =>
+        event.preventDefault()
+      );
+      document.addEventListener("keydown", (event) => {
+        if (
+          (event.ctrlKey &&
+            ["u", "s", "i", "j"].includes(event.key.toLowerCase())) ||
+          event.key === "F12"
+        ) {
+          event.preventDefault();
+        }
+      });
+    </script>
+
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Online Exam</title>
+    <!-- Chart.js CDN -->
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&display=swap");
+
+      body {
+        font-family: "Hind Siliguri", sans-serif;
+        margin: 0;
+        padding: 0;
+        background-color: #f4f4f4;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+      }
+
+      .container {
+        font-family: "Hind Siliguri", sans-serif;
+        width: 100%;
+        margin: auto;
+        background-color: white;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        min-height: 80vh;
+      }
+
+      .exam-content {
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+
+      h1 {
+        color: #1b0b54;
+        text-align: center;
+        margin-bottom: 10px;
+      }
+
+      #timer {
+        font-size: 20px;
+        color: #1b0b54;
+        margin-bottom: 5px;
+        font-weight: normal;
+        text-align: center;
+      }
+
+      #exam-info {
+        font-size: 16px;
+        color: black;
+        margin-bottom: 20px;
+        text-align: center;
+      }
+
+      #exam {
+        width: 100%;
+        min-height: 100px;
+      }
+
+      .chart-container {
+        width: 200px;
+        height: 200px;
+        margin: 10px auto;
+        background-color: #f9f9f9;
+        border-radius: 15px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        display: none;
+        padding: 10px;
+      }
+
+      .chart-container.visible {
+        display: block;
+      }
+
+      .question-container {
+        text-align: left;
+        margin-bottom: 20px;
+        display: block;
+      }
+
+      .question-label {
+        font-weight: bold;
+        color: #1b0b54;
+        margin-bottom: 10px;
+      }
+
+      .options {
+        margin-top: 10px;
+      }
+
+      .option {
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        cursor: pointer;
+        padding: 5px;
+        border-radius: 5px;
+        text-transform: uppercase;
+      }
+
+      .circle {
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        border: 2px solid #1b0b54;
+        margin-right: 10px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        color: #1b0b54;
+        font-weight: bold;
+        font-size: 18px;
+      }
+
+      .selected .circle {
+        background-color: #1b0b54;
+        color: white;
+      }
+
+      .correct-text {
+        color: green !important;
+      }
+
+      .incorrect-text {
+        color: #ff0800 !important;
+      }
+
+      .unattempted-text {
+        color: orange !important;
+      }
+
+      #submitBtn {
+        font-family: hind siliguri;
+        padding: 15px 30px;
+        background-color: #1b0b54;
+        color: white;
+        border: none;
+        cursor: pointer;
+        font-size: 18px;
+        font-weight: bold;
+        border-radius: 10px;
+        margin-top: 20px;
+        width: 200px;
+        transition: background-color 0.3s ease;
+      }
+
+      #submitBtn:hover {
+        background-color: #1b0b54;
+      }
+
+      .popup {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background-color: white;
+        padding: 20px;
+        width: 300px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+        border-radius: 10px;
+        text-align: center;
+        display: none;
+        z-index: 1000;
+        transition: transform 0.5s ease, opacity 0.5s ease;
+      }
+
+      .popup.slide-out {
+        transform: translate(-50%, -100%);
+        opacity: 0;
+      }
+
+      .popup-header {
+        background-color: #1b0b54;
+        color: white;
+        padding: 10px;
+        font-size: 20px;
+        font-weight: bold;
+        border-radius: 10px 10px 0 0;
+      }
+
+      .popup-body {
+        padding: 15px;
+      }
+
+      .popup-body p {
+        margin: 10px 0;
+      }
+
+      .confirm-btn {
+        font-family: hind siliguri;
+        background-color: #34c759;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        cursor: pointer;
+        font-size: 14px;
+        border-radius: 5px;
+        margin: 5px;
+      }
+
+      .confirm-btn:hover {
+        background-color: #34c759;
+      }
+
+      .cancel-btn {
+        background-color: #ff3b30;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        cursor: pointer;
+        font-size: 14px;
+        border-radius: 5px;
+        margin: 5px;
+      }
+
+      .cancel-btn:hover {
+        background-color: #e02b21;
+      }
+
+      .explanation-dropdown {
+        display: none;
+        margin-top: 10px;
+      }
+
+      .explanation-dropdown.visible {
+        display: block;
+      }
+
+      .explanation-btn {
+        background-color: #1b0b54;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 14px;
+        font-family: "Hind Siliguri", sans-serif;
+        width: 40%;
+        text-align: left;
+        position: relative;
+      }
+
+      .explanation-btn:hover {
+        background-color: #1b0b54;
+      }
+
+      .explanation-btn::after {
+        content: "▼";
+        position: absolute;
+        right: 10px;
+        font-size: 12px;
+      }
+
+      .explanation-btn.active::after {
+        content: "▲";
+      }
+
+      .explanation-content {
+        display: none;
+        padding: 15px;
+        background-color: #f9f9f9;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        font-size: 14px;
+        color: #000000;
+        text-align: left;
+        max-height: 450px;
+        overflow-y: auto;
+        margin-top: 5px;
+      }
+
+      .explanation-content.visible {
+        display: block;
+      }
+
+      .explanation-content p {
+        margin: 0 0 10px 0;
+      }
+
+      .explanation-content ul {
+        margin: 0;
+        padding-left: 20px;
+      }
+
+      .explanation-content li {
+        margin-bottom: 5px;
+      }
+
+      .explanation-content strong {
+        color: #1b0b54;
+      }
+
+      .explanation-label {
+        font-weight: bold;
+        color: #1b0b54;
+        margin-bottom: 10px;
+        display: block;
+      }
+
+      .locked .option {
+        pointer-events: none;
+        cursor: default;
+      }
+
+      .locked .option.selected {
+        pointer-events: none;
+        cursor: default;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="container" id="examContainer">
+      <div class="exam-content">
+        <h1>কেমিস্ট্রি ২য় অনুশীলন</h1>
+        <div id="timer"></div>
+        <div id="exam-info"></div>
+        <div class="chart-container">
+          <canvas id="scoreChart"></canvas>
+        </div>
+        <div id="exam">
+          <!-- Questions will be generated dynamically -->
+        </div>
+        <button id="submitBtn">সাবমিট</button>
+      </div>
+    </div>
+
+    <div class="popup" id="scorePopup">
+      <div class="popup-header">তোমার স্কোর</div>
+      <div class="popup-body">
+        <p><strong>মোট প্রশ্ন:</strong> <span id="totalQuestions"></span></p>
+        <p>
+          <strong>উত্তর দিয়েছো:</strong>
+          <span style="color: #000000" id="answered"></span>
+        </p>
+        <p>
+          <strong>সঠিক উত্তর:</strong>
+          <span style="color: #0ab853" id="correctAnswers"></span>
+        </p>
+        <p>
+          <strong>ভুল উত্তর:</strong>
+          <span style="color: #f81010" id="wrongAnswers"></span>
+        </p>
+        <p>
+          <strong>অনুত্তরিত:</strong>
+          <span style="color: #ffc801" id="unanswered"></span>
+        </p>
+        <p><strong>তোমার চূড়ান্ত স্কোর:</strong></p>
+        <h2 style="color: #1b0b54"><span id="finalScore"></span></h2>
+        <form id="scoreForm" action="https://formspree.io/f/xpby" method="POST">
+          <input type="hidden" name="userID" id="formUserID" />
+          <input type="hidden" name="finalScore" id="formFinalScore" />
+          <input type="hidden" name="correctAnswers" id="formCorrectAnswers" />
+          <input type="hidden" name="wrongAnswers" id="formWrongAnswers" />
+          <input type="hidden" name="unanswered" id="formUnanswered" />
+          <button
+            type="submit"
+            class="confirm-btn"
+            style="background-color: #1b0b54"
+          >
+            <b>ওকে</b>
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <div class="popup" id="confirmPopup">
+      <div class="popup-header">কনফার্ম করো</div>
+      <div class="popup-body">
+        <p>
+          ভালো করে দেখে নাও! <br />
+          পরীক্ষা শেষ করতে চাও তো?
+        </p>
+        <button class="confirm-btn" onclick="confirmSubmit()">
+          <b>হ্যাঁ</b>
+        </button>
+        <button class="cancel-btn" onclick="cancelSubmit()"><b>না</b></button>
+      </div>
+    </div>
+
+    <script>
+      let chartInstance = null;
+
+      document.addEventListener("DOMContentLoaded", function () {
+        console.log("DOM fully loaded and parsed");
+        const examContainer = document.getElementById("examContainer");
+        if (!examContainer) {
+          console.error("Exam container not found!");
+          return;
+        }
+        try {
+          sessionStorage.setItem("isLoggedIn", "true");
+          sessionStorage.setItem("userID", "anonymous");
+          console.log(
+            "Session storage set: isLoggedIn = true, userID = anonymous"
+          );
+        } catch (e) {
+          console.error("Session storage error:", e);
+        }
+        examContainer.style.display = "block";
+        console.log("Exam container displayed");
+        startTimer();
+        generateQuestions();
+
+        window.addEventListener("beforeunload", function (event) {
+          if (
+            examContainer.style.display === "block" &&
+            sessionStorage.getItem("isLoggedIn") === "true"
+          ) {
+            autoSubmitScore();
+          }
+        });
+      });
+
+      const questions = [
+        {
+          id: 1,
+          question: "নিচের কোনটি সবচেয়ে শক্তিশালী এসিড?",
+          options: {
+            A: "ClCH₂COOH",
+            B: "ICH₂COOH",
+            C: "BrCH₂COOH",
+            D: "H₂FSbF₆",
+          },
+          correct: "D",
+          explanation:
+            "<p>H₂FSbF₆ হলো ফ্লুরোঅ্যান্টিমনিক অ্যাসিড, যা পৃথিবীর সবচেয়ে শক্তিশালী পরিচিত সুপারএসিড। এটি ১০০% সালফিউরিক অ্যাসিডের চেয়ে ১০¹⁹ গুণ বেশি শক্তিশালী। অন্যান্য বিকল্পগুলি হলো হ্যালোজেন প্রতিস্থাপিত কার্বক্সিলিক অ্যাসিড, যা সাধারণ কার্বক্সিলিক অ্যাসিডের চেয়ে শক্তিশালী হলেও ফ্লুরোঅ্যান্টিমনিক অ্যাসিডের তুলনায় অনেক দুর্বল।</p>",
+        },
+        {
+          id: 2,
+          question:
+            "কার্বক্সিলিক (-COOH) কার্যকরী মূলকের শনাক্তকারী বিকারক নিম্নের কোনটি?",
+          options: {
+            A: "PCl₅",
+            B: "20% NaOH",
+            C: "Na",
+            D: "5% NaHCO₃ দ্রবণ",
+          },
+          correct: "D",
+          explanation:
+            "<p>কার্বক্সিলিক অ্যাসিড (RCOOH) সোডিয়াম বাইকার্বনেট (NaHCO₃) দ্রবণের সাথে বিক্রিয়া করে কার্বন ডাই অক্সাইড গ্যাস (CO₂) উৎপন্ন করে, যা বুদবুদ আকারে নির্গত হয়। এটি কার্বক্সিলিক অ্যাসিডের একটি বৈশিষ্ট্যপূর্ণ শনাক্তকরণ পরীক্ষা।</p>",
+        },
+        {
+          id: 3,
+          question: "নিম্নের কোনটি পামিটিক এসিড?",
+          options: {
+            A: "C₁₅H₃₁CO₂H",
+            B: "C₁₇H₃₃CO₂H",
+            C: "C₁₅H₃₃CO₂H",
+            D: "C₁₇H₃₁CO₂H",
+          },
+          correct: "A",
+          explanation:
+            "<p>পামিটিক অ্যাসিড হলো একটি সম্পৃক্ত ফ্যাটি অ্যাসিড যার ১৬টি কার্বন পরমাণু থাকে। এর রাসায়নিক সংকেত হলো C₁₅H₃₁COOH বা C₁₅H₃₁CO₂H।</p>",
+        },
+        {
+          id: 4,
+          question: "CH₃CN + H₂O → A + NH₃ উদ্দীপকের A যৌগটি কী?",
+          options: {
+            A: "CH₃COOH",
+            B: "CH₃CH₂COOH",
+            C: "CH₃CHO",
+            D: "CH₃CH₂OH",
+          },
+          correct: "A",
+          explanation:
+            "<p>অ্যালকাইল সায়ানাইড (নাইট্রাইল) এর আর্দ্র-বিশ্লেষণ (hydrolysis) দ্বারা কার্বক্সিলিক অ্যাসিড উৎপন্ন হয়। মিথাইল সায়ানাইড (CH₃CN) এর আর্দ্র-বিশ্লেষণে ইথানয়িক অ্যাসিড (CH₃COOH) এবং অ্যামোনিয়া (NH₃) উৎপন্ন হয়।</p>",
+        },
+        {
+          id: 5,
+          question: "কোনটি বিজারক?",
+          options: {
+            A: "টলেন বিকারক",
+            B: "মিথানয়িক এসিড",
+            C: "মারকিউরিক ক্লোরাইড",
+            D: "সবগুলোই",
+          },
+          correct: "B",
+          explanation:
+            "<p>মিথানয়িক অ্যাসিড (ফরমিক অ্যাসিড, HCOOH) একটি ব্যতিক্রমী কার্বক্সিলিক অ্যাসিড কারণ এর গঠনে একটি অ্যালডিহাইড (-CHO) মূলকও বিদ্যমান। তাই এটি অ্যালডিহাইডের মতো বিজারক ধর্ম প্রদর্শন করে এবং টলেন্স বিকারক, ফেহলিং দ্রবণ এবং মারকিউরিক ক্লোরাইডকে বিজারিত করতে পারে। টলেন্স বিকারক এবং মারকিউরিক ক্লোরাইড নিজে বিজারক নয়, বরং জারণ ক্ষমতা সম্পন্ন।</p>",
+        },
+        {
+          id: 6,
+          question: "মিথানোয়িক এসিড বিজারণ করতে পারে-",
+          options: {
+            A: "টলেন বিকারক",
+            B: "এসিডীয় পটাসিয়াম পারম্যাঙ্গানেট",
+            C: "মারকিউরিক ক্লোরাইড",
+            D: "সবগুলোই",
+          },
+          correct: "D",
+          explanation:
+            "<p>মিথানোয়িক অ্যাসিড (ফরমিক অ্যাসিড) একটি শক্তিশালী বিজারক। এর গঠনে একটি অ্যালডিহাইড মূলক থাকায় এটি টলেন্স বিকারক, ফেহলিং দ্রবণ, এসিডীয় পটাসিয়াম পারম্যাঙ্গানেট এবং মারকিউরিক ক্লোরাইড (HgCl₂) সহ অনেক জারণ ক্ষমতা সম্পন্ন পদার্থকে বিজারণ করতে পারে।</p>",
+        },
+        {
+          id: 7,
+          question: "কোনটি অসম্পৃক্ত ফ্যাটি এসিডের উদাহরণ?",
+          options: {
+            A: "স্টিয়ারিক",
+            B: "পামিটিক",
+            C: "লিনোলিক",
+            D: "প্রোপানয়িক",
+          },
+          correct: "C",
+          explanation:
+            "<p>অসম্পৃক্ত ফ্যাটি অ্যাসিডে কার্বন-কার্বন দ্বিবন্ধন বা ত্রিবন্ধন থাকে। স্টিয়ারিক অ্যাসিড এবং পামিটিক অ্যাসিড উভয়ই সম্পৃক্ত ফ্যাটি অ্যাসিড। প্রোপানয়িক অ্যাসিড একটি ছোট সম্পৃক্ত ফ্যাটি অ্যাসিড। লিনোলিক অ্যাসিড হলো একটি অসম্পৃক্ত ফ্যাটি অ্যাসিড যার দুটি দ্বিবন্ধন রয়েছে।</p>",
+        },
+        {
+          id: 8,
+          question: "কোন এসিডটির অনুবন্ধী ক্ষারক সবচেয়ে দুর্বল?",
+          options: {
+            A: "CH₃COOH",
+            B: "ClCH₂COOH",
+            C: "Cl₂CHCOOH",
+            D: "Cl₃CCOOH",
+          },
+          correct: "D",
+          explanation:
+            "<p>একটি অ্যাসিডের তীব্রতা যত বেশি হয়, তার অনুবন্ধী ক্ষারক তত দুর্বল হয়। কার্বক্সিলিক অ্যাসিডের তীব্রতা -I প্রভাব দ্বারা বৃদ্ধি পায়। ক্লোরিন পরমাণুর সংখ্যা বাড়ার সাথে সাথে -I প্রভাব বৃদ্ধি পায়, ফলে অ্যাসিডের তীব্রতা বাড়ে। ট্রাইক্লোরোঅ্যাসিটিক অ্যাসিড (Cl₃CCOOH) এর তিনটি ক্লোরিন পরমাণুর শক্তিশালী -I প্রভাবের কারণে এটি প্রদত্ত বিকল্পগুলির মধ্যে সবচেয়ে শক্তিশালী অ্যাসিড। সুতরাং, এর অনুবন্ধী ক্ষারক (CCl₃COO⁻) সবচেয়ে দুর্বল হবে।</p>",
+        },
+        {
+          id: 9,
+          question:
+            "নিচের চারটি কার্বক্সিলিক এসিড জাতকের মধ্যে কোনটি কম সক্রিয়?",
+          options: {
+            A: "R-CONH₂",
+            B: "RCO₂R",
+            C: "(R-CO)₂O",
+            D: "RCOCl",
+          },
+          correct: "B",
+          explanation:
+            "<p>কার্বক্সিলিক অ্যাসিড জাতকগুলির (derivative) নিউক্লিওফিলিক প্রতিস্থাপন বিক্রিয়ার প্রতি সক্রিয়তার ক্রম নিম্নরূপ:</p><ul><li>অ্যাসাইল হ্যালাইড (RCOCl) > অ্যাসাইল অ্যানহাইড্রাইড ((R-CO)₂O) > এস্টার (RCO₂R) > অ্যামাইড (R-CONH₂)</ul><p>এই ক্রমটি কার্বনিল কার্বনের ইলেকট্রন ঘাটতি এবং নিউক্লিওফিলিক আক্রমণের সহজলভ্যতার উপর নির্ভর করে। RCO₂R (এস্টার) অ্যামাইডের চেয়ে সক্রিয়, কিন্তু অ্যাসাইল হ্যালাইড এবং অ্যানহাইড্রাইডের চেয়ে কম সক্রিয়। তবে প্রদত্ত বিকল্পগুলির মধ্যে এস্টার (RCO₂R) হলো সবচেয়ে কম সক্রিয়, কারণ অ্যামাইডের নাইট্রোজেনের নিঃসঙ্গ ইলেকট্রন জোড়ের রেজোনেন্স প্রভাব এস্টারের অক্সিজেনের রেজোনেন্স প্রভাবের চেয়ে কার্বনিল কার্বনকে আরও বেশি সক্রিয় করে তোলে।</p>",
+        },
+        {
+          id: 10,
+          question: "আপেলে কোন এসিড বিদ্যমান থাকে?",
+          options: {
+            A: "সাইট্রিক এসিড",
+            B: "অক্সালিক এসিড",
+            C: "ফলিক এসিড",
+            D: "ম্যালিক এসিড",
+          },
+          correct: "D",
+          explanation:
+            "<p>আপেলে প্রধানত ম্যালিক অ্যাসিড (Malic acid) বিদ্যমান থাকে, যা আপেলের টক স্বাদের জন্য দায়ী।</p>",
+        },
+        {
+          id: 11,
+          question: "কোন এসিডটি লেবুতে পাওয়া যায়?",
+          options: {
+            A: "মিথানয়িক এসিড",
+            B: "ইথানয়িক এসিড",
+            C: "সাইট্রিক এসিড",
+            D: "টারটারিক এসিড",
+          },
+          correct: "C",
+          explanation:
+            "<p>লেবু এবং অন্যান্য সাইট্রাস ফল যেমন কমলা, গ্রেপফ্রুটে প্রধানত সাইট্রিক অ্যাসিড (Citric acid) বিদ্যমান থাকে, যা এদের টক স্বাদের জন্য দায়ী।</p>",
+        },
+        {
+          id: 12,
+          question: "ফরমিক এসিড কোনটির সাথে বিক্রিয়া করে না?",
+          options: {
+            A: "টলেন বিকারক",
+            B: "NaHCO3",
+            C: "ফেলিং দ্রবন",
+            D: "2,4-DNPH",
+          },
+          correct: "D",
+          explanation:
+            "<p>ফরমিক অ্যাসিড (HCOOH) একটি অ্যালডিহাইড গ্রুপ (-CHO) ধারণ করে এবং কার্বক্সিলিক অ্যাসিড গ্রুপ (-COOH) ধারণ করে। তাই এটি টলেন্স বিকারক এবং ফেহলিং দ্রবণকে বিজারিত করে। এটি একটি অ্যাসিড হওয়ায় NaHCO₃ এর সাথে বিক্রিয়া করে CO₂ উৎপন্ন করে। কিন্তু 2,4-ডাইনাইট্রোফিনাইলহাইড্রাজিন (2,4-DNPH) কার্বনিল যৌগ (অ্যালডিহাইড ও কিটোন) এর সাথে বিক্রিয়া করে হাইড্রাজোন উৎপন্ন করে। ফরমিক অ্যাসিডে কার্বনিল মূলক থাকলেও, এটি নিজেই একটি অ্যাসিড এবং এর বিক্রিয়া প্যাটার্ন 2,4-DNPH এর সাথে একটি আদর্শ অ্যালডিহাইড/কিটোনের মতো হয় না। তবে, যেহেতু এটিতে অ্যালডিহাইড বৈশিষ্ট্য রয়েছে, অনেক সময় প্রশ্ন এটিকে 2,4-DNPH এর সাথে বিক্রিয়া করে বলে ধরে নেওয়া হয়। কিন্তু এই বিকল্পগুলিতে ফরমিক অ্যাসিডের বিজারক বৈশিষ্ট্য (টলেন্স, ফেহলিং) এবং অ্যাসিড বৈশিষ্ট্য (NaHCO₃) নিশ্চিত। 2,4-DNPH সাধারণত অ্যালডিহাইড ও কিটোন শনাক্তকরণে ব্যবহৃত হয়, যেখানে কার্বনিল কার্বনের সাথে অন্তত একটি হাইড্রোজেন বা দুটি অ্যালকাইল/অ্যারাইল গ্রুপ থাকে। ফরমিক অ্যাসিডের কার্বনিল কার্বন সরাসরি একটি হাইড্রোজেন এবং একটি হাইড্রক্সিল গ্রুপের সাথে যুক্ত। এই প্রেক্ষিতে, 2,4-DNPH এর সাথে এর বিক্রিয়া কম সাধারণ বা কম উল্লেখযোগ্য। তাই, এটিই 'বিক্রিয়া করে না' এর জন্য সবচেয়ে সম্ভাব্য উত্তর।</p>",
+        },
+        {
+          id: 13,
+          question: "কৃত্রিম রেশম ও রেয়ন উৎপাদনে বেশি ব্যবহৃত হয়-",
+          options: {
+            A: "HNO₃",
+            B: "HClO₄",
+            C: "H₂SO₄",
+            D: "H₂O₂",
+          },
+          correct: "C",
+          explanation:
+            "<p>সালফিউরিক অ্যাসিড (H₂SO₄) কৃত্রিম রেশম ও রেয়ন (যেমন ভিসকস রেয়ন) উৎপাদনে একটি গুরুত্বপূর্ণ বিকারক হিসেবে ব্যবহৃত হয়। এটি সেলুলোজ দ্রবীভূত করতে এবং ফাইবার পুনরুত্পাদনে সহায়তা করে।</p>",
+        },
+        {
+          id: 14,
+          question: "তেঁতুলে কোন এসিড বিদ্যমান থাকে?",
+          options: {
+            A: "এসকরবিক এসিড",
+            B: "টারটারিক এসিড",
+            C: "অ্যামাইনো এসিড",
+            D: "নাইট্রিক এসিড",
+          },
+          correct: "B",
+          explanation:
+            "<p>তেঁতুলে প্রধানত টারটারিক অ্যাসিড (Tartaric acid) বিদ্যমান থাকে, যা এর টক স্বাদের জন্য দায়ী।</p>",
+        },
+        {
+          id: 15,
+          question: "কোনটিতে অ্যামাইড মূলক রয়েছে?",
+          options: {
+            A: "RCOOR",
+            B: "RCONH₂",
+            C: "RNH₂",
+            D: "RCN",
+          },
+          correct: "B",
+          explanation:
+            "<p>অ্যামাইড মূলক হলো -CONH₂। RCONH₂ হলো একটি অ্যামাইড। RCOOR হলো এস্টার, RNH₂ হলো অ্যামিন, এবং RCN হলো নাইট্রাইল বা সায়ানাইড।</p>",
+        },
+        {
+          id: 16,
+          question: "নিচের কোন এসিডের তীব্রতা সবচেয়ে বেশি?",
+          options: {
+            A: "CH₃COOH",
+            B: "ClCH₂COOH",
+            C: "Cl₂CHCOOH",
+            D: "Cl₃CCOOH",
+          },
+          correct: "D",
+          explanation:
+            "<p>কার্বক্সিলিক অ্যাসিডের তীব্রতা অ্যালকাইল গ্রুপের ইলেকট্রন প্রত্যাহারকারী (Electron-withdrawing) মূলকের -I প্রভাব দ্বারা বৃদ্ধি পায়। ক্লোরিন একটি ইলেকট্রন প্রত্যাহারকারী পরমাণু। ক্লোরিনের সংখ্যা বাড়ার সাথে সাথে -I প্রভাব বৃদ্ধি পায় এবং অ্যাসিডের তীব্রতাও বৃদ্ধি পায়। তাই, ট্রাইক্লোরোঅ্যাসিটিক অ্যাসিড (Cl₃CCOOH) প্রদত্ত বিকল্পগুলির মধ্যে সবচেয়ে শক্তিশালী অ্যাসিড।</p>",
+        },
+        {
+          id: 17,
+          question: "পাইরোলিগনাস এসিডে ইথানয়িক এসিডের পরিমাণ-",
+          options: {
+            A: "0.1 - 0.5%",
+            B: "2-4%",
+            C: "8 - 10%",
+            D: "30 - 40%",
+          },
+          correct: "C",
+          explanation:
+            "<p>পাইরোলিগনাস অ্যাসিড (Pyroligneous acid) হলো কাঠের ভিনাশী পাতনের (destructive distillation) উপজাত। এতে প্রায় 8-10% ইথানয়িক অ্যাসিড (অ্যাসিটিক অ্যাসিড), মেথানল, অ্যাসিটোন এবং অন্যান্য যৌগ থাকে।</p>",
+        },
+        {
+          id: 18,
+          question:
+            "C₂H₅MgX + CO₂ এর বিক্রিয়ায় উৎপন্ন যৌগের আর্দ্র-বিশ্লেষণে কী উৎপন্ন হয়?",
+          options: {
+            A: "প্রোপানোয়িক এসিড",
+            B: "প্রোপেন",
+            C: "প্রোপানল",
+            D: "প্রোপান্যাল",
+          },
+          correct: "A",
+          explanation:
+            "<p>গ্রিগনার্ড বিকারক (RMgX) কার্বন ডাই অক্সাইড (CO₂) এর সাথে বিক্রিয়া করে একটি কার্বক্সিলিক অ্যাসিডের ম্যাগনেসিয়াম লবণ উৎপন্ন করে, যা পরবর্তীতে আর্দ্র-বিশ্লেষণে কার্বক্সিলিক অ্যাসিড দেয়। C₂H₅MgX (ইথাইল ম্যাগনেসিয়াম হ্যালাইড) CO₂ এর সাথে বিক্রিয়া করে এবং আর্দ্র-বিশ্লেষণে প্রোপানোয়িক অ্যাসিড (CH₃CH₂COOH) উৎপন্ন করে। এখানে কার্বন চেইনে একটি কার্বন বৃদ্ধি পায়।</p>",
+        },
+        {
+          id: 19,
+          question: "নিচের কোন যৌগটির অণুতে –COOH মূলক অনুপস্থিত?",
+          options: {
+            A: "পিকরিক এসিড",
+            B: "ল্যাকটিক এসিড",
+            C: "অ্যাসপ্রিন",
+            D: "ফ্যাটি এসিড",
+          },
+          correct: "A",
+          explanation:
+            "<p>পিকরিক অ্যাসিড (Picric acid) হলো 2,4,6-ট্রাইনাইট্রোফেনল। এটি একটি ফেনল এবং এর কোনো কার্বক্সিলিক অ্যাসিড (-COOH) মূলক নেই। ল্যাকটিক অ্যাসিড, অ্যাসপ্রিন এবং ফ্যাটি অ্যাসিড সবগুলিতেই -COOH মূলক বিদ্যমান।</p>",
+        },
+        {
+          id: 20,
+          question:
+            "C₃H₇MgX + CO₂ এর বিক্রিয়ায় উৎপন্ন যৌগের আর্দ্র-বিশ্লেষণে কী উৎপন্ন হয়?",
+          options: {
+            A: "বিউটেন",
+            B: "বিউটানয়িক এসিড",
+            C: "বিউটানল",
+            D: "বিউটান্যাল",
+          },
+          correct: "B",
+          explanation:
+            "<p>গ্রিগনার্ড বিকারক (C₃H₇MgX, প্রোপাইল ম্যাগনেসিয়াম হ্যালাইড) CO₂ এর সাথে বিক্রিয়া করে একটি কার্বক্সিলিক অ্যাসিডের ম্যাগনেসিয়াম লবণ উৎপন্ন করে, যা পরবর্তীতে আর্দ্র-বিশ্লেষণে কার্বক্সিলিক অ্যাসিড দেয়। এখানে কার্বন চেইনে একটি কার্বন বৃদ্ধি পায়। C₃H₇ থেকে বিউটানয়িক অ্যাসিড (CH₃CH₂CH₂COOH) উৎপন্ন হয়।</p>",
+        },
+        {
+          id: 21,
+          question:
+            "ইথান্যামাইডকে HNO₂ দ্বারা নাইট্রেশন করলে কোন কার্যকরী মূলকের যৌগ উৎপন্ন হয়?",
+          options: {
+            A: "-COOH",
+            B: "-CN",
+            C: "–NH₂",
+            D: "-OH",
+          },
+          correct: "A",
+          explanation:
+            "<p>ইথান্যামাইড (CH₃CONH₂) নাইট্রাস অ্যাসিড (HNO₂) এর সাথে বিক্রিয়া করে ইথানয়িক অ্যাসিড (CH₃COOH) এবং নাইট্রোজেন গ্যাস (N₂) উৎপন্ন করে। এই বিক্রিয়াটি অ্যামাইডের ডায়াজোটাইজেশন এবং হাইড্রক্সিলেশন এর মাধ্যমে সংঘটিত হয়।</p>",
+        },
+        {
+          id: 22,
+          question: "কোনটি সম্পৃক্ত ফ্যাটি এসিডের উদাহরণ?",
+          options: {
+            A: "অ্যাক্রোলিক",
+            B: "অলিয়িক",
+            C: "লিনোলিক",
+            D: "পামিটিক",
+          },
+          correct: "D",
+          explanation:
+            "<p>সম্পৃক্ত ফ্যাটি অ্যাসিডে কোনো কার্বন-কার্বন দ্বিবন্ধন বা ত্রিবন্ধন থাকে না। অ্যাক্রোলিক, অলিয়িক এবং লিনোলিক অ্যাসিড অসম্পৃক্ত ফ্যাটি অ্যাসিড। পামিটিক অ্যাসিড (C₁₅H₃₁COOH) হলো একটি সম্পৃক্ত ফ্যাটি অ্যাসিড।</p>",
+        },
+        {
+          id: 23,
+          question: "এস্টারের কার্যকরী মূলক কোনটি?",
+          options: {
+            A: "(CO)₂O",
+            B: "-COX",
+            C: "-COOR",
+            D: "-OR",
+          },
+          correct: "C",
+          explanation:
+            "<p>এস্টারের কার্যকরী মূলক হলো -COOR, যেখানে R একটি অ্যালকাইল বা অ্যারাইল মূলক। (CO)₂O হলো অ্যাসিড অ্যানহাইড্রাইড, -COX হলো অ্যাসাইল হ্যালাইড এবং -OR হলো অ্যালকক্সাইডের কার্যকরী মূলক (যা ইথার বা অ্যালকোহলে থাকে)।</p>",
+        },
+      ];
+      const totalQuestions = questions.length;
+      let timeLeft = Math.floor(totalQuestions / 2) * 60;
+      const timerElement = document.getElementById("timer");
+      let timerInterval;
+
+      function updateTimer() {
+        const minutes = Math.floor(timeLeft / 60);
+        const seconds = timeLeft % 60;
+        timerElement.innerText = `${toBengaliNumber(
+          minutes
+        )} মিনিট ${toBengaliNumber(seconds)} সেকেন্ড`;
+
+        if (timeLeft > 0) {
+          timeLeft--;
+        } else {
+          stopTimer();
+          confirmSubmit();
+        }
+      }
+
+      function startTimer() {
+        console.log("Starting timer");
+        timerElement.innerText = `${toBengaliNumber(
+          Math.floor(timeLeft / 60)
+        )} মিনিট ${toBengaliNumber(timeLeft % 60)} সেকেন্ড`;
+        timerInterval = setInterval(updateTimer, 1000);
+      }
+
+      function stopTimer() {
+        clearInterval(timerInterval);
+        console.log("Timer stopped");
+      }
+
+      function toBengaliNumber(num) {
+        const bengaliDigits = [
+          "০",
+          "১",
+          "২",
+          "৩",
+          "৪",
+          "৫",
+          "৬",
+          "৭",
+          "৮",
+          "৯",
+        ];
+        let numStr = num.toString();
+
+        let isNegative = num < 0;
+        if (isNegative) {
+          numStr = numStr.substring(1);
+        }
+
+        if (numStr.includes(".")) {
+          let [integerPart, decimalPart] = numStr.split(".");
+          let integerBengali = integerPart
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          let decimalBengali = decimalPart
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          return (
+            (isNegative ? "−" : "") + integerBengali + "." + decimalBengali
+          );
+        } else {
+          let integerBengali = numStr
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          return (isNegative ? "−" : "") + integerBengali;
+        }
+      }
+
+      function shuffleArray(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [array[i], array[j]] = [array[j], array[i]];
+        }
+        return array;
+      }
+
+      function generateQuestions() {
+        console.log("Generating questions");
+        const examContainer = document.querySelector("#exam");
+        if (!examContainer) {
+          console.error("Exam container (#exam) not found!");
+          return;
+        }
+        examContainer.innerHTML = "";
+        console.log("Questions array:", questions);
+        const shuffledQuestions = shuffleArray([...questions]);
+        shuffledQuestions.forEach((question, index) => {
+          console.log(`Generating question ${index + 1}:`, question);
+          const questionDiv = document.createElement("div");
+          questionDiv.classList.add("question-container");
+          questionDiv.setAttribute("data-question", question.id);
+          questionDiv.setAttribute("data-correct", question.correct);
+
+          let optionsHTML = "";
+          for (let option in question.options) {
+            optionsHTML += `
+                                                          <label class="option" data-option="${option}">
+                                                            <div class="circle">${option}</div>
+                                                            <span class="option-text">${question.options[option]}</span>
+                                                          </label>
+                                                        `;
+          }
+
+          const explanationHTML = question.explanation
+            ? `<div class="explanation-dropdown">
+                                                             <button class="explanation-btn">ব্যাখ্যা দেখো</button>
+                                                             <div class="explanation-content">
+                                                               <div class="explanation-label">ব্যাখ্যা:</div>
+                                                               ${question.explanation}
+                                                             </div>
+                                                           </div>`
+            : "";
+
+          questionDiv.innerHTML = `
+                                                        <p class="question-label">${
+                                                          index + 1
+                                                        }. ${
+            question.question
+          }</p>
+                                                        <div class="options">
+                                                          ${optionsHTML}
+                                                        </div>
+                                                        ${explanationHTML}
+                                                      `;
+          examContainer.appendChild(questionDiv);
+          console.log(`Appended question ${index + 1} to exam container`);
+        });
+
+        const questionContainers = document.querySelectorAll(
+          ".question-container"
+        );
+        console.log(`Found ${questionContainers.length} question containers`);
+        questionContainers.forEach((container, idx) => {
+          console.log(`Setting question ${idx + 1} to visible`);
+          container.style.display = "block";
+        });
+
+        document.querySelectorAll(".option").forEach((option) => {
+          option.addEventListener(
+            "click",
+            function (e) {
+              e.preventDefault();
+              const parent = this.closest(".question-container");
+              if (parent.classList.contains("locked")) return;
+              parent.classList.add("locked");
+              parent.querySelectorAll(".option").forEach((el) => {
+                if (el !== this) {
+                  el.style.pointerEvents = "none";
+                  el.style.cursor = "default";
+                }
+                el.classList.remove("selected");
+              });
+              this.classList.add("selected");
+              console.log(
+                `Option selected for question ${parent.getAttribute(
+                  "data-question"
+                )}: ${this.getAttribute("data-option")}`
+              );
+            },
+            { once: true }
+          );
+        });
+
+        document.querySelectorAll(".explanation-btn").forEach((btn) => {
+          btn.addEventListener("click", function () {
+            const content = this.nextElementSibling;
+            content.classList.toggle("visible");
+            this.classList.toggle("active");
+            console.log("Toggled explanation visibility");
+          });
+        });
+
+        const examInfo = document.getElementById("exam-info");
+        if (examInfo) {
+          examInfo.innerText = `পূর্ণ নম্বরঃ ${toBengaliNumber(
+            totalQuestions
+          )}`;
+          console.log("Exam info updated");
+        } else {
+          console.error("Exam info element not found!");
+        }
+      }
+
+      function initializeChart() {
+        console.log("Initializing chart");
+        const ctx = document.getElementById("scoreChart").getContext("2d");
+        chartInstance = new Chart(ctx, {
+          type: "pie",
+          data: {
+            labels: ["ঠিক উত্তর", "ভুল উত্তর", "অনুত্তরিত"],
+            datasets: [
+              {
+                data: [0, 0, 0],
+                backgroundColor: ["#34c759", "#ff3b30", "#007aff"],
+                borderColor: "#fff",
+                borderWidth: 2,
+                hoverOffset: 10,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: "10%",
+            layout: {
+              padding: 10,
+            },
+            plugins: {
+              legend: {
+                position: "bottom",
+                labels: {
+                  font: {
+                    family: '"Hind Siliguri", sans-serif',
+                    size: 13,
+                    weight: "bold",
+                  },
+                  color: "#333",
+                  padding: 12,
+                  boxWidth: 14,
+                  generateLabels: (chart) => {
+                    const data = chart.data;
+                    return data.labels.map((label, i) => ({
+                      text: label,
+                      font: {
+                        family: '"Hind Siliguri", sans-serif',
+                      },
+                      fillStyle: data.datasets[0].backgroundColor[i],
+                      hidden: !chart.getDataVisibility(i),
+                      index: i,
+                    }));
+                  },
+                },
+              },
+              tooltip: {
+                backgroundColor: "rgba(0, 0, 0, 0.9)",
+                cornerRadius: 6,
+                titleFont: {
+                  family: '"Hind Siliguri", sans-serif',
+                  size: 14,
+                  weight: "bold",
+                },
+                bodyFont: {
+                  family: '"Hind Siliguri", sans-serif',
+                  size: 13,
+                },
+                padding: 10,
+                boxPadding: 5,
+              },
+            },
+            animation: {
+              animateScale: true,
+              animateRotate: true,
+              duration: 1000,
+              easing: "easeOutQuart",
+            },
+            elements: {
+              arc: {
+                borderRadius: 8,
+              },
+            },
+            onClick: (e, elements) => {
+              if (elements.length > 0) {
+                const index = elements[0].index;
+                const filter = ["correct", "wrong", "unanswered"][index];
+                filterQuestions(filter);
+              } else {
+                filterQuestions("all");
+              }
+            },
+          },
+        });
+        console.log("Chart initialized");
+      }
+
+      function filterQuestions(type) {
+        console.log(`Filtering questions by type: ${type}`);
+        document.querySelectorAll(".question-container").forEach((question) => {
+          const status = question.getAttribute("data-status");
+          if (type === "all" || status === type) {
+            question.style.display = "block";
+          } else {
+            question.style.display = "none";
+          }
+        });
+      }
+
+      function showConfirmPopup() {
+        console.log("Showing confirm popup");
+        document.getElementById("confirmPopup").style.display = "block";
+      }
+
+      function autoSubmitScore() {
+        console.log("Auto-submitting score");
+        stopTimer();
+        let score = 0,
+          total = questions.length,
+          answered = 0,
+          correct = 0,
+          wrong = 0,
+          unanswered = 0;
+
+        document.querySelectorAll(".question-container").forEach((question) => {
+          let correctAnswer = question.getAttribute("data-correct");
+          let selectedOption = question.querySelector(".option.selected");
+
+          if (selectedOption) {
+            answered++;
+            let chosenAnswer = selectedOption.getAttribute("data-option");
+            if (chosenAnswer === correctAnswer) {
+              score += 1;
+              correct++;
+              question.setAttribute("data-status", "correct");
+            } else {
+              score -= 0.25;
+              wrong++;
+              question.setAttribute("data-status", "wrong");
+            }
+          } else {
+            unanswered++;
+            question.setAttribute("data-status", "unanswered");
+          }
+        });
+
+        const userID = sessionStorage.getItem("userID") || "anonymous";
+        const formData = new FormData();
+        formData.append("userID", userID);
+        formData.append("finalScore", score.toFixed(2));
+        formData.append("correctAnswers", correct);
+        formData.append("wrongAnswers", wrong);
+        formData.append("unanswered", unanswered);
+
+        const url = "https://formspree.io/f/xpwy";
+        navigator.sendBeacon(url, formData);
+        console.log("Auto-submission sent via sendBeacon for userID:", userID);
+      }
+
+      function confirmSubmit() {
+        console.log("Confirming submission");
+        document.getElementById("confirmPopup").style.display = "none";
+        stopTimer();
+        let score = 0,
+          total = questions.length,
+          answered = 0,
+          correct = 0,
+          wrong = 0,
+          unanswered = 0;
+
+        document
+          .querySelectorAll(".question-container")
+          .forEach((question, index) => {
+            let correctAnswer = question.getAttribute("data-correct");
+            let selectedOption = question.querySelector(".option.selected");
+
+            if (selectedOption) {
+              answered++;
+              let chosenAnswer = selectedOption.getAttribute("data-option");
+              if (chosenAnswer === correctAnswer) {
+                selectedOption
+                  .querySelector(".option-text")
+                  .classList.add("correct-text");
+                score += 1;
+                correct++;
+                question.setAttribute("data-status", "correct");
+              } else {
+                selectedOption
+                  .querySelector(".option-text")
+                  .classList.add("incorrect-text");
+                question
+                  .querySelector(
+                    `[data-option="${correctAnswer}"] .option-text`
+                  )
+                  .classList.add("correct-text");
+                score -= 0.25;
+                wrong++;
+                question.setAttribute("data-status", "wrong");
+              }
+            } else {
+              question
+                .querySelector(`[data-option="${correctAnswer}"] .option-text`)
+                .classList.add("unattempted-text");
+              unanswered++;
+              question.setAttribute("data-status", "unanswered");
+            }
+            question.style.display = "block";
+
+            const explanationDropdown = question.querySelector(
+              ".explanation-dropdown"
+            );
+            if (explanationDropdown) {
+              explanationDropdown.classList.add("visible");
+            }
+          });
+
+        const chartContainer = document.querySelector(".chart-container");
+        chartContainer.classList.add("visible");
+        if (!chartInstance) {
+          initializeChart();
+        }
+        chartInstance.data.datasets[0].data = [correct, wrong, unanswered];
+        chartInstance.update();
+        console.log("Chart updated with data:", [correct, wrong, unanswered]);
+
+        const userID = sessionStorage.getItem("userID") || "anonymous";
+        document.getElementById("totalQuestions").innerText =
+          toBengaliNumber(total);
+        document.getElementById("answered").innerText =
+          toBengaliNumber(answered);
+        document.getElementById("correctAnswers").innerText =
+          toBengaliNumber(correct);
+        document.getElementById("wrongAnswers").innerText =
+          toBengaliNumber(wrong);
+        document.getElementById("unanswered").innerText =
+          toBengaliNumber(unanswered);
+        document.getElementById("finalScore").innerText = toBengaliNumber(
+          score.toFixed(2)
+        );
+
+        document.getElementById("formUserID").value = userID;
+        document.getElementById("formFinalScore").value = score.toFixed(2);
+        document.getElementById("formCorrectAnswers").value = correct;
+        document.getElementById("formWrongAnswers").value = wrong;
+        document.getElementById("formUnanswered").value = unanswered;
+
+        document.getElementById("submitBtn").style.display = "none";
+
+        document.getElementById("scorePopup").style.display = "block";
+
+        const form = document.getElementById("scoreForm");
+        fetch(form.action, {
+          method: "POST",
+          body: new FormData(form),
+          headers: {
+            Accept: "application/json",
+          },
+        })
+          .then((response) => {
+            if (response.ok) {
+              console.log("Form submitted successfully");
+              form.reset();
+            } else {
+              console.error("Form submission failed:", response.statusText);
+            }
+          })
+          .catch((error) => {
+            console.error("Error:", error);
+          });
+      }
+
+      function cancelSubmit() {
+        console.log("Canceling submission");
+        document.getElementById("confirmPopup").style.display = "none";
+      }
+
+      document
+        .getElementById("submitBtn")
+        .addEventListener("click", function () {
+          console.log("Submit button clicked");
+          showConfirmPopup();
+        });
+
+      function closePopup() {
+        console.log("Closing score popup");
+        const scorePopup = document.getElementById("scorePopup");
+        scorePopup.classList.add("slide-out");
+        setTimeout(() => {
+          scorePopup.style.display = "none";
+          scorePopup.classList.remove("slide-out");
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        }, 500);
+      }
+
+      document
+        .getElementById("scoreForm")
+        .addEventListener("submit", function (event) {
+          event.preventDefault();
+          console.log("Score form submitted");
+          closePopup();
+        });
+    </script>
+  </body>
+</html>
